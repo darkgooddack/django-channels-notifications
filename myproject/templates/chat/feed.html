@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Chat Feed</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column;
+            height: 100vh;
+            background: #fefefe;
+        }
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            padding: 12px;
+            margin: 0;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+        }
+        #feed-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .event {
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin: 6px 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .room {
+            font-weight: bold;
+            color: #0a6cff;
+        }
+        .author {
+            font-weight: 600;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Global Chat Feed</h1>
+    <div id="feed-container"></div>
+
+    <div id="room-list"></div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            const roomList = document.getElementById("room-list");
+            const feedContainer = document.getElementById("feed-container");
+
+            // Подключаем WebSocket к FeedConsumer
+            const feedSocket = new WebSocket('ws://' + window.location.host + '/ws/feed/');
+
+            feedSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+
+                const div = document.createElement("div");
+                div.className = "event";
+                div.innerHTML = `<span class="author">${data.author}</span> написал в <span class="room">${data.room}</span>: ${data.message}`;
+                feedContainer.appendChild(div);
+
+                feedContainer.scrollTop = feedContainer.scrollHeight;
+            };
+
+
+            // Получаем комнаты пользователя
+            const res = await fetch("/api/user_rooms/");
+            const data = await res.json();
+            data.rooms.forEach(room => {
+                const span = document.createElement("span");
+                span.className = "room-item";
+                span.innerHTML = `${room} <button data-room="${room}">Подписаться</button>`;
+                roomList.appendChild(span);
+            });
+
+            // Подписка/отписка
+            roomList.querySelectorAll("button").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const room = btn.dataset.room;
+                    const action = btn.textContent === "Подписаться" ? "subscribe" : "unsubscribe";
+                    feedSocket.send(JSON.stringify({action, room}));
+                    btn.textContent = action === "subscribe" ? "Отписаться" : "Подписаться";
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
