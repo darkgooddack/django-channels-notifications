@@ -1,5 +1,5 @@
 from django.db import models
-from django.conf import settings  # чтобы можно было подменять User при кастомизации
+from django.conf import settings
 
 
 class Message(models.Model):
@@ -8,7 +8,7 @@ class Message(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,   # кто написал
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         null=True,
         blank=True,
